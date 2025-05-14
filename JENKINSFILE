@@ -1,9 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'node:18-alpine' // since you're building/testing Node.js
-
-'
+image 'node:18-alpine' // since you're building/testing Node.js
             args '-v /var/run/docker.sock:/var/run/docker.sock -u root'
         }
     }
@@ -16,16 +14,15 @@ pipeline {
         KUBECONFIG = '/var/jenkins_home/.kube/config'
         minikube image load ${DOCKER_IMAGE}
 
-    }
+        // Placeholder for Minikube image load, moved to the appropriate stage
     
     stages {
         stage('Checkout') {
             steps {
                 git url: https://github.com/WhereareyouRAJ/Build-A-CI-CD-Pipeline.git            , branch: 'main'
 
+            git url: 'https://github.com/WhereareyouRAJ/Build-A-CI-CD-Pipeline.git', branch: 'main'
         }
-        
-        stage('Setup Tools') {
             steps {
                 sh '''
                 apt install -y curl bash git docker.io
