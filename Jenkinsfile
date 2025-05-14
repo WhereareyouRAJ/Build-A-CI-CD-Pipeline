@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-image 'node:18-alpine' // since you're building/testing Node.js
+            image 'node:18-alpine' // since you're building/testing Node.js
             args '-v /var/run/docker.sock:/var/run/docker.sock -u root'
         }
     }
@@ -12,19 +12,19 @@ image 'node:18-alpine' // since you're building/testing Node.js
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKER_IMAGE = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
         KUBECONFIG = '/var/jenkins_home/.kube/config'
-        minikube image load ${DOCKER_IMAGE}
-
-        // Placeholder for Minikube image load, moved to the appropriate stage
+    }
     
     stages {
         stage('Checkout') {
             steps {
-               checkout scm // Checkout the code from the repository
-
+                checkout scm // Checkout the code from the repository
+            }
         }
+        
+        stage('Install Dependencies') {
             steps {
                 sh '''
-                apt install -y curl bash git docker.io
+                apk add --no-cache curl bash git docker.io
                
                 # Install kubectl
                 curl -LO "https://dl.k8s.io/release/stable.txt"
@@ -32,9 +32,6 @@ image 'node:18-alpine' // since you're building/testing Node.js
                 curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
                 chmod +x kubectl
                 mv kubectl /usr/local/bin/
-
-                # Install dependencies for pipeline
-                apk add --no-cache curl bash git
                 '''
             }
         }
@@ -50,19 +47,20 @@ image 'node:18-alpine' // since you're building/testing Node.js
                 sh '''
                 # Start the container for testing
                 docker run --rm ${DOCKER_IMAGE} npm test || true
-                
-                # Alternatively, you can run tests directly
-                # npm install
-                # npm test
                 '''
             }
         }
+        
         stage('Load Image into Minikube') {
-           steps {
-           sh 'minikube image load ${DOCKER_IMAGE}'
-          }
-       }
-        stage('Deploy to Minikube') {
+            steps {
+                sh '''
+                # Load Docker image into Minikube
+                minikube image load ${DOCKER_IMAGE}
+                '''
+            }
+        }
+        
+        stage('Deploy to Kubernetes') {
             steps {
                 sh '''
                 # Create or update deployment
