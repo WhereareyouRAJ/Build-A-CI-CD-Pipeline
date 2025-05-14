@@ -19,11 +19,7 @@ image 'node:18-alpine' // since you're building/testing Node.js
     stages {
         stage('Checkout') {
             steps {
-               checkout([
-                 $class: 'GitSCM',
-                 branches: [[name: '*/main']],
-                 userRemoteConfigs: [[url: 'https://github.com/WhereareyouRAJ/Build-A-CI-CD-Pipeline.git']]
-])
+               checkout scm // Checkout the code from the repository
 
         }
             steps {
