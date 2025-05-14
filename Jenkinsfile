@@ -19,12 +19,9 @@ pipeline {
         stage('Install Tools') {
             steps {
                 sh '''
-                sudo apt-get update && sudo apt-get install -y curl git docker.io
+                 apt-get update &&  apt-get install -y curl git docker.io
 
-                curl -LO "https://dl.k8s.io/release/stable.txt"
-                KUBECTL_VERSION=$(cat stable.txt)
-                curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-                chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+                
                 '''
             }
         }
