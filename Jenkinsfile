@@ -1,69 +1,70 @@
 pipeline {
     agent {
         docker {
-            image 'node:18-alpine' // since you're building/testing Node.js
+            image 'node:18-alpine'
             args '-v /var/run/docker.sock:/var/run/docker.sock -u root'
         }
     }
-    
+
     environment {
-        DOCKER_REGISTRY = 'localhost:5000'
-        IMAGE_NAME = 'myapp'
+        DOCKER_REGISTRY = 'docker.io'
+        IMAGE_NAME = 'yourdockerhubusername/myapp' // 🔁 Replace with your DockerHub username
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         DOCKER_IMAGE = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
         KUBECONFIG = '/var/jenkins_home/.kube/config'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
-                checkout scm // Checkout the code from the repository
+                checkout scm
             }
         }
-        
-        stage('Install Dependencies') {
+
+        stage('Install Tools') {
             steps {
                 sh '''
-                apk add --no-cache curl bash git docker.io
-               
+                apk add --no-cache curl bash git docker-cli
+
                 # Install kubectl
                 curl -LO "https://dl.k8s.io/release/stable.txt"
                 KUBECTL_VERSION=$(cat stable.txt)
                 curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-                chmod +x kubectl
-                mv kubectl /usr/local/bin/
+                chmod +x kubectl && mv kubectl /usr/local/bin/
                 '''
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${DOCKER_IMAGE} .'
             }
         }
-        
-        stage('Run Tests') {
+
+        stage('Test') {
             steps {
+                echo "Running tests..."
                 sh '''
-                # Start the container for testing
-                docker run --rm ${DOCKER_IMAGE} npm test || true
+                docker run --rm ${DOCKER_IMAGE} npm test
                 '''
             }
         }
-        
-        stage('Load Image into Minikube') {
+
+        stage('Push to DockerHub') {
             steps {
-                sh '''
-                # Load Docker image into Minikube
-                minikube image load ${DOCKER_IMAGE}
-                '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh '''
+                    echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+                    docker push ${DOCKER_IMAGE}
+                    docker logout
+                    '''
+                }
             }
         }
-        
+
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                # Create or update deployment
                 cat <<EOF | kubectl apply -f -
                 apiVersion: apps/v1
                 kind: Deployment
@@ -99,28 +100,34 @@ pipeline {
                     targetPort: 5000
                   type: NodePort
                 EOF
-                
-                # Wait for deployment to be ready
+
                 kubectl rollout status deployment/myapp-deployment
-                
-                # Get service URL
-                echo "Application deployed. Access it using:"
-                minikube service myapp-service --url
+                minikube service myapp-service --url || true
                 '''
             }
         }
     }
-    
+
     post {
         success {
-            echo 'CI/CD Pipeline completed successfully!'
+            echo '🎉 CI/CD Pipeline completed successfully!'
+            slackSend (
+                color: '#36a64f',
+                message: "✅ Build #${BUILD_NUMBER} of *${JOB_NAME}* succeeded! 🎉\n${BUILD_URL}"
+            )
         }
+
         failure {
-            echo 'CI/CD Pipeline failed!'
+            echo '💥 CI/CD Pipeline failed!'
+            slackSend (
+                color: '#ff0000',
+                message: "❌ Build #${BUILD_NUMBER} of *${JOB_NAME}* failed! 💥\n${BUILD_URL}"
+            )
         }
+
         always {
-            // Clean up
-            sh 'docker rmi ${DOCKER_IMAGE} || true'
+            echo 'Cleaning up Docker image...'
+            sh 'docker rmi ${DOCKER_IMAGE} || echo "Image not found or already removed"'
         }
     }
 }
