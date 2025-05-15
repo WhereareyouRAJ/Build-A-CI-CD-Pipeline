@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: node-app
-          image: rajsingh8826/myapp
+          image: docker.io/rajsingh8826/myapp
           ports:
             - containerPort: 5000
             
