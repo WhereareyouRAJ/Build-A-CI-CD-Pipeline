@@ -16,16 +16,7 @@ pipeline {
             }
         }
 
-        stage('Install Tools') {
-            steps {
-                sh '''
-                 apt-get update &&  apt-get install -y curl git docker.io
-
-                
-                '''
-            }
-        }
-
+       
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${DOCKER_IMAGE} .'
@@ -50,64 +41,5 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                cat <<EOF | kubectl apply -f -
-                apiVersion: apps/v1
-                kind: Deployment
-                metadata:
-                  name: myapp-deployment
-                  labels:
-                    app: myapp
-                spec:
-                  replicas: 1
-                  selector:
-                    matchLabels:
-                      app: myapp
-                  template:
-                    metadata:
-                      labels:
-                        app: myapp
-                    spec:
-                      containers:
-                      - name: myapp
-                        image: ${DOCKER_IMAGE}
-                        ports:
-                        - containerPort: 5000
-                ---
-                apiVersion: v1
-                kind: Service
-                metadata:
-                  name: myapp-service
-                spec:
-                  selector:
-                    app: myapp
-                  ports:
-                  - port: 80
-                    targetPort: 5000
-                  type: NodePort
-                EOF
-
-                kubectl rollout status deployment/myapp-deployment
-                minikube service myapp-service --url || true
-                '''
-            }
-        }
+ 
     }
-
-    post {
-        success {
-            echo '✅ CI/CD Pipeline completed successfully!'
-        }
-
-        failure {
-            echo '❌ CI/CD Pipeline failed!'
-        }
-
-        always {
-            echo '🧹 Cleaning up Docker image...'
-            sh 'docker rmi ${DOCKER_IMAGE} || true'
-        }
-    }
-}
