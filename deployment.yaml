@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: node-app-Deployment
+  name: myapp-Deployment
 spec: 
   replicas: 2
   selector:
     matchLabels:
-      app: node-app
+      app: myapp
   template:
     metadata:
       labels:
-        app: node-app
+        app: myapp
     spec:
       containers:
-        - name: node-app
+        - name: myapp
           image: docker.io/rajsingh8826/myapp:${BUILD_NUMBER} 
           ports:
             - containerPort: 5000
