@@ -63,8 +63,8 @@ pipeline {
                     echo "        ports:" >> deployment.yaml
                     echo "        - containerPort: 5000" >> deployment.yaml
 
-                    ./kubectl --kubeconfig=$KUBECONFIG_FILE apply -f deployment.yaml
-                    ./kubectl --kubeconfig=$KUBECONFIG_FILE rollout status deployment/myapp-deployment
+                    kubectl --kubeconfig=$KUBECONFIG_FILE apply -f deployment.yaml
+                    kubectl --kubeconfig=$KUBECONFIG_FILE rollout status deployment/myapp-deployment
                     '''
                 }
             }
