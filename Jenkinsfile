@@ -85,15 +85,4 @@ pipeline {
     }
 }
 
-            post {
-        success {
-            echo '✅ CI/CD Pipeline completed successfully!'
-        }
-        failure {
-            echo '❌ CI/CD Pipeline failed!'
-        }
-        always {
-            echo '🧹 Cleaning up Docker image...'
-            sh 'docker rmi ${DOCKER_IMAGE} || true'
-        }
-    }
+ 
