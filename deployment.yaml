@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: myapp
-          image: docker.io/rajsingh8826/myapp:${BUILD_NUMBER} 
+          image: rajsingh8826/myapp:${BUILD_NUMBER}
           ports:
             - containerPort: 5000
             
