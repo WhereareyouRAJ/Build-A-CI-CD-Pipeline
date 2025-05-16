@@ -54,6 +54,8 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
+                    export BUILD_NUMBER=${BUILD_NUMBER}
+                    envsubst < deployment.yaml.template > deployment.yaml
                     ./kubectl --kubeconfig=$KUBECONFIG_FILE apply -f deployment.yaml
                     ./kubectl --kubeconfig=$KUBECONFIG_FILE rollout status deployment/myapp-deployment
                     ./kubectl --kubeconfig=$KUBECONFIG_FILE get pods
