@@ -37,6 +37,19 @@ pipeline {
                 }
             }
         }
+        stage('Install kubectl') {
+            steps {
+                sh '''
+                if [ ! -f kubectl ]; then
+                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    chmod +x kubectl
+                else
+                    echo "kubectl already exists"
+                fi
+                ./kubectl version --client
+                '''
+            }
+        }
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
