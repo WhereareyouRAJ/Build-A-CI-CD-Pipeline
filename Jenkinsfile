@@ -66,4 +66,27 @@ pipeline {
     }
 }
 
+ post {
+        success {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh '''
+                curl -X POST -H 'Content-type: application/json' \
+                --data '{"text":"✅ *Deployment Successful!*\\nJob: '${JOB_NAME}'\\nBuild: '${BUILD_NUMBER}'\\nImage: '${DOCKER_IMAGE}'"}' \
+                $SLACK_URL
+                '''
+            }
+        }
+
+        failure {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                sh '''
+                curl -X POST -H 'Content-type: application/json' \
+                --data '{"text":"❌ *Deployment Failed!*\\nJob: '${JOB_NAME}'\\nBuild: '${BUILD_NUMBER}'"}' \
+                $SLACK_URL
+                '''
+            }
+        }
+    }
+
+
  
